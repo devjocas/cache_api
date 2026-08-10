@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache API</title>
+</head>
+<body>
+    <h1>Usuarios</h1>
+    <button id="carregar">CarregarUser</button>
+    <pre id="resultado"></pre>
+
+    <script>
+        const CACHE_NAME= 'api_cache_v1'
+        const URL_API = 'https:jsonplaceholder.typicode.com/users/1'
+        async function buscarUsers() {
+            const cache = await caches.open(CACHE_NAME)
+
+            // PROCURAR RESPOSTA NO CACHE 
+            const respCache = await cache.match(URL_API)
+            if(respCache){
+                console.log('Resposta obtida do cache')
+                // converter resposta para Json
+                return respCache.json()
+            }
+            console.log('Resposta obtida na rede')
+            const respRede = await fetch(URL_API)
+            if(respRede.ok){
+                throw new Error(`Error HTTP:${respRede.status}`)
+                await cache.put(URL_API, respRede.clone())
+                return respRede.json()
+            }
+            document.querySelector('#carregar').addEventListener('click', async ()=>{
+                const resultado =  document.querySelector('resultado')
+                try{
+                    const user = await buscarUsers()
+                    resultado.textContent = JSON.stringify(user, null, 2)
+                }catch{
+                    resultado.textContent = `Erro ${erro.message}`
+                }
+            })
+                
+        }
+    </script>
+</body>
+</html>
