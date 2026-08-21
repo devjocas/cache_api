@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproduzindo um arquivo de áudio</title>
+</head>
+<body>
+    <button id="play">Reproduzir</button>
+    <script>
+        const audioContext = new AudioContext()
+        let audioBuffer;
+        async function carregarAudio() {
+            const response = await fetch('./musica.mp3')
+            const arrayBuffer = await response.arrayBuffer()
+            audioBuffer =  await audioContext.decodeAudioData(arrayBuffer)
+        };
+        document.querySelector('#play').addEventListener('click', async()=>{
+            if(!audioBuffer){
+                await carregarAudio();
+            };
+            if(!audioBuffer==='suspended'){
+                await audioContext.resume()
+            }
+            const source = audioContext.createBufferSource();
+            const gain = audioContext.createGain()
+            source.buffer = audioBuffer;
+            gain.gain.value = 0.8
+            source.connect(gain)
+            gain.connect(audioContext.destination)
+            source.start
+        })
+    </script>
+</body>
+</html>
