@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-br"
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioAPI</title>
+</head>
+<body>
+    <button id="play">Tocar audio</button>
+    <script>
+        const button = document.querySelector('#play')
+        button.addEventListener('click', ()=>{
+            const audioContext = new AudioContext();
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 440;
+            gain.gain.value = 0.2;
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1)
+        })
+    </script>
+</body>
+</html>
