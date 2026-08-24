@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <title>MediaStream: câmera, mic, resolução e gravação</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 20px auto; }
+    video { width: 100%; background: #000; }
+    .row { margin: 10px 0; display: flex; gap: 10px; flex-wrap: wrap; }
+    label { display: block; margin-bottom: 4px; }
+    select, button { padding: 6px 10px; }
+  </style>
+</head>
+<body>
+  <h1>MediaStream API – exemplo completo</h1>
+
+  <div class="row">
+    <div>
+      <label for="cameraSelect">Câmera</label>
+      <select id="cameraSelect"></select>
+    </div>
+    <div>
+      <label for="micSelect">Microfone</label>
+      <select id="micSelect"></select>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Resolução</label>
+      <div style="display:flex; gap:6px;">
+        <button data-res="480">480p</button>
+        <button data-res="720">720p</button>
+        <button data-res="1080">1080p</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <button id="btnStart">Iniciar câmera</button>
+    <button id="btnStopCamera">Parar câmera</button>
+    <button id="btnRecord">Gravar</button>
+    <button id="btnStopRecord" disabled>Parar gravação</button>
+  </div>
+
+  <video id="localVideo" autoplay playsinline></video>
+
+  <script>
+    const videoEl = document.getElementById('localVideo');
+    const cameraSelect = document.getElementById('cameraSelect');
+    const micSelect = document.getElementById('micSelect');
+    const btnStart = document.getElementById('btnStart');
+    const btnStopCamera = document.getElementById('btnStopCamera');
+    const btnRecord = document.getElementById('btnRecord');
+    const btnStopRecord = document.getElementById('btnStopRecord');
+
+    let localStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    // 1. Listar dispositivos
+    async function listDevices() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(d => d.kind === 'videoinput');
+      const mics = devices.filter(d => d.kind === 'audioinput');
+
+      cameraSelect.innerHTML = '';
+      micSelect.innerHTML = '';
+
+      cameras.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.textContent = d.label || `Câmera ${i + 1}`;
+        cameraSelect.appendChild(opt);
+      });
+
+      mics.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.textContent = d.label || `Microfone ${i + 1}`;
+        micSelect.appendChild(opt);
+      });
+    }
+
+    // 2. Iniciar stream com deviceId + resolução
+    async function startCamera() {
+      const videoDeviceId = cameraSelect.value;
+      const audioDeviceId = micSelect.value;
+
+      const constraints = {
+        video: videoDeviceId
+          ? { deviceId: { exact: videoDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: audioDeviceId
+          ? { deviceId: { exact: audioDeviceId } }
+          : true
+      };
+
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+      }
+
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      videoEl.srcObject = localStream;
+
+      // habilitar gravação
+      btnRecord.disabled = false;
+    }
+
+    function stopCamera() {
+      if (!localStream) return;
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+      videoEl.srcObject = null;
+      btnRecord.disabled = true;
+    }
+
+    // 3. Mudar resolução em tempo real
+    async function setResolution(p) {
+      if (!localStream) return;
+      const track = localStream.getVideoTracks()[0];
+      if (!track) return;
+
+      const map = {
+        480: { width: 640, height: 480 },
+        720: { width: 1280, height: 720 },
+        1080: { width: 1920, height: 1080 }
+      };
+
+      const { width, height } = map[p];
+      await track.applyConstraints({
+        width: { ideal: width },
+        height: { ideal: height }
+      });
+    }
+
+    // 4. Gravar com MediaRecorder
+    function startRecording() {
+      if (!localStream) return;
+      recordedChunks = [];
+
+      // Opcional: definir mimeType e bitrate
+      const options = {};
+      // Exemplo: preferir VP9/Opus se disponível
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+        options.mimeType = 'video/webm;codecs=vp9,opus';
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        options.mimeType = 'video/webm';
+      }
+
+      mediaRecorder = new MediaRecorder(localStream, options);
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gravacao-${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      };
+
+      mediaRecorder.start();
+      btnRecord.disabled = true;
+      btnStopRecord.disabled = false;
+    }
+
+    function stopRecording() {
+      if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+      mediaRecorder.stop();
+      btnRecord.disabled = false;
+      btnStopRecord.disabled = true;
+    }
+
+    // Eventos
+    btnStart.addEventListener('click', startCamera);
+    btnStopCamera.addEventListener('click', stopCamera);
+
+    document.querySelectorAll('button[data-res]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = btn.getAttribute('data-res');
+        setResolution(p);
+      });
+    });
+
+    btnRecord.addEventListener('click', startRecording);
+    btnStopRecord.addEventListener('click', stopRecording);
+
+    // Inicializar lista de dispositivos (pede permissão na primeira vez que usar getUserMedia)
+    listDevices();
+  </script>
+</body>
+</html>
