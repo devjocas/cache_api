@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geolocation API - Exemplo Pratico</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 140px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .btn-danger {
+      background: #ff4757;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #ff3344;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      text-align: center;
+      display: none;
+    }
+
+    .status.info {
+      background: #e3f2fd;
+      color: #1976d2;
+      display: block;
+    }
+
+    .status.success {
+      background: #e8f5e9;
+      color: #388e3c;
+      display: block;
+    }
+
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+      display: block;
+    }
+
+    .location-info {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .location-info h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 16px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 8px;
+    }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .data-row:last-child {
+      border-bottom: none;
+    }
+
+    .data-label {
+      color: #666;
+      font-weight: 500;
+    }
+
+    .data-value {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .map-link {
+      display: block;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 15px;
+      transition: transform 0.3s ease;
+    }
+
+    .map-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .history {
+      margin-top: 20px;
+    }
+
+    .history h3 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .history-item {
+      padding: 8px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 13px;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-time {
+      color: #999;
+      font-size: 11px;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌍 Geolocation API</h1>
+    <p class="subtitle">Exemplo pratico com JavaScript</p>
+
+    <div id="status" class="status"></div>
+
+    <div class="btn-group">
+      <button id="btnCurrent" class="btn-primary" onclick="getCurrentLocation()">
+        📍 Posicao Atual
+      </button>
+      <button id="btnWatch" class="btn-secondary" onclick="startWatch()">
+        👁️ Monitorar
+      </button>
+      <button id="btnClear" class="btn-danger" onclick="clearWatch()" disabled>
+        ⏹️ Parar
+      </button>
+    </div>
+
+    <div id="locationInfo" class="location-info" style="display: none;">
+      <h3>📊 Dados da Localizacao</h3>
+      <div class="data-row">
+        <span class="data-label">Latitude:</span>
+        <span id="latitude" class="data-value">-</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Longitude:</span>
+        <span id="longitude" class="data-value">-</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Precisao:</span>
+        <span id="accuracy" class="data-value">-</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Altitude:</span>
+        <span id="altitude" class="data-value">-</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Velocidade:</span>
+        <span id="speed" class="data-value">-</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Atualizado em:</span>
+        <span id="timestamp" class="data-value">-</span>
+      </div>
+      <a id="mapLink" class="map-link" href="#" target="_blank">
+        🗺️ Ver no Google Maps
+      </a>
+    </div>
+
+    <div class="history">
+      <h3>📜 Historico de Posicoes</h3>
+      <div id="historyList" class="history-list">
+        <p style="color: #999; text-align: center;">Nenhuma posicao registrada ainda</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let watchId = null;
+    let positionHistory = [];
+
+    // Verifica suporte do navegador
+    function checkSupport() {
+      if (!('geolocation' in navigator)) {
+        showStatus('Geolocation nao e suportada pelo seu navegador!', 'error');
+        disableButtons();
+        return false;
+      }
+      return true;
+    }
+
+    // Mostra mensagem de status
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = 'status ' + type;
+    }
+
+    // Desabilita botoes
+    function disableButtons() {
+      document.getElementById('btnCurrent').disabled = true;
+      document.getElementById('btnWatch').disabled = true;
+      document.getElementById('btnClear').disabled = true;
+    }
+
+    // Exibe dados da localizacao
+    function displayLocation(position, isWatch = false) {
+      const coords = position.coords;
+      const timestamp = new Date(position.timestamp);
+
+      // Atualiza UI
+      document.getElementById('locationInfo').style.display = 'block';
+      document.getElementById('latitude').textContent = coords.latitude.toFixed(6);
+      document.getElementById('longitude').textContent = coords.longitude.toFixed(6);
+      document.getElementById('accuracy').textContent = coords.accuracy.toFixed(2) + ' metros';
+      document.getElementById('altitude').textContent = coords.altitude !== null ? coords.altitude.toFixed(2) + ' m' : 'N/A';
+      document.getElementById('speed').textContent = coords.speed !== null ? coords.speed.toFixed(2) + ' m/s' : 'N/A';
+      document.getElementById('timestamp').textContent = timestamp.toLocaleString('pt-BR');
+
+      // Atualiza link do Google Maps
+      const mapUrl = `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`;
+      document.getElementById('mapLink').href = mapUrl;
+
+      // Adiciona ao historico
+      addToHistory(coords.latitude, coords.longitude, coords.accuracy, timestamp);
+
+      if (!isWatch) {
+        showStatus('Localizacao obtida com sucesso!', 'success');
+      }
+    }
+
+    // Adiciona posicao ao historico
+    function addToHistory(lat, lng, accuracy, timestamp) {
+      positionHistory.unshift({ lat, lng, accuracy, timestamp });
+      
+      // Mantem apenas ultimas 10 posicoes
+      if (positionHistory.length > 10) {
+        positionHistory.pop();
+      }
+
+      // Atualiza UI do historico
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = positionHistory.map((pos, index) => `
+        <div class="history-item">
+          <strong>#${positionHistory.length - index}</strong> 
+          ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)} 
+          (${pos.accuracy.toFixed(1)}m)
+          <div class="history-time">${pos.timestamp.toLocaleString('pt-BR')}</div>
+        </div>
+      `).join('');
+    }
+
+    // Trata erro
+    function handleError(error) {
+      let message = '';
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          message = 'Permissao negada. Permita o acesso a localizacao no navegador.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          message = 'Localizacao indisponivel. Verifique se o GPS esta ativado.';
+          break;
+        case error.TIMEOUT:
+          message = 'Tempo esgotado. Tente novamente.';
+          break;
+        default:
+          message = 'Erro desconhecido ao obter localizacao.';
+      }
+      showStatus(message, 'error');
+    }
+
+    // Obtem posicao atual
+    function getCurrentLocation() {
+      if (!checkSupport()) return;
+
+      showStatus('<span class="loading"></span>Obtendo sua localizacao...', 'info');
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => displayLocation(position),
+        handleError,
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    // Inicia monitoramento
+    function startWatch() {
+      if (!checkSupport()) return;
+
+      if (watchId !== null) {
+        showStatus('Monitoramento ja esta em andamento.', 'info');
+        return;
+      }
+
+      showStatus('<span class="loading"></span>Monitorando sua localizacao...', 'info');
+      document.getElementById('btnWatch').disabled = true;
+      document.getElementById('btnClear').disabled = false;
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => displayLocation(position, true),
+        handleError,
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    // Para monitoramento
+    function clearWatch() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        showStatus('Monitoramento interrompido.', 'info');
+        document.getElementById('btnWatch').disabled = false;
+        document.getElementById('btnClear').disabled = true;
+      }
+    }
+
+    // Inicializa
+    checkSupport();
+  </script>
+</body>
+</html>
