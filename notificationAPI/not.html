@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification API - Exemplo Pratico</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 30px;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    .status-card {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .status-card h3 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .permission-status {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .permission-status.default {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .permission-status.granted {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .permission-status.denied {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 140px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #f093fb;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      font-weight: normal;
+      cursor: pointer;
+    }
+
+    .notification-preview {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+      color: white;
+    }
+
+    .notification-preview h3 {
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .preview-notification {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 15px;
+      backdrop-filter: blur(10px);
+    }
+
+    .preview-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-body {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .preview-icon {
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .history {
+      margin-top: 20px;
+    }
+
+    .history h3 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .history-item {
+      padding: 10px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 13px;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-item.success {
+      background: #d4edda;
+      border-radius: 5px;
+    }
+
+    .history-item.error {
+      background: #f8d7da;
+      border-radius: 5px;
+    }
+
+    .history-time {
+      color: #999;
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #1976d2;
+    }
+
+    .info-box strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔔 Notification API</h1>
+    <p class="subtitle">Exemplo pratico com JavaScript</p>
+
+    <div class="status-card">
+      <h3>Status da Permissao</h3>
+      <div id="permissionStatus" class="permission-status default">
+        Verificando...
+      </div>
+      <p id="permissionText" style="color: #666; font-size: 13px;">
+        Clique em "Solicitar Permissao" para permitir notificacoes
+      </p>
+    </div>
+
+    <div class="btn-group">
+      <button id="btnRequest" class="btn-primary" onclick="requestPermission()">
+        🔓 Solicitar Permissao
+      </button>
+      <button id="btnSend" class="btn-primary" onclick="sendNotification()" disabled>
+        🔔 Enviar Notificacao
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label for="notifTitle">Titulo da Notificacao</label>
+      <input 
+        type="text" 
+        id="notifTitle" 
+        placeholder="Ex: Nova Mensagem"
+        value="🔔 Nova Notificacao"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="notifBody">Conteudo da Mensagem</label>
+      <textarea 
+        id="notifBody" 
+        placeholder="Ex: Voce tem uma nova mensagem"
+      >Esta e uma notificacao de teste da Notification API!</textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="notifIcon">Icone (URL)</label>
+        <input 
+          type="text" 
+          id="notifIcon" 
+          placeholder="https://exemplo.com/icon.png"
+          value="https://via.placeholder.com/192"
+        >
+      </div>
+      <div class="form-group">
+        <label for="notifBadge">Badge (URL)</label>
+        <input 
+          type="text" 
+          id="notifBadge" 
+          placeholder="https://exemplo.com/badge.png"
+          value="https://via.placeholder.com/96"
+        >
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="notifTag">Tag (agrupar notificacoes)</label>
+      <input 
+        type="text" 
+        id="notifTag" 
+        placeholder="Ex: mensagem-1"
+        value="teste-1"
+      >
+    </div>
+
+    <div class="checkbox-group">
+      <input type="checkbox" id="notifVibrate" checked>
+      <label for="notifVibrate">Vibrar (se suportado)</label>
+    </div>
+
+    <div class="checkbox-group">
+      <input type="checkbox" id="notifSilent">
+      <label for="notifSilent">Silencioso (sem som)</label>
+    </div>
+
+    <div class="notification-preview">
+      <h3>👁️ Pre-visualizacao</h3>
+      <div class="preview-notification">
+        <div class="preview-title">
+          <span class="preview-icon">🔔</span>
+          <span id="previewTitle">🔔 Nova Notificacao</span>
+        </div>
+        <div class="preview-body" id="previewBody">
+          Esta e uma notificacao de teste da Notification API!
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>💡 Dica:</strong>
+      As notificacoes podem aparecer mesmo quando voce esta em outra aba ou com o navegador minimizado. Em dispositivos moveis, e necessario usar Service Worker para notificacoes em segundo plano.
+    </div>
+
+    <div class="history">
+      <h3>📜 Historico de Notificacoes</h3>
+      <div id="historyList" class="history-list">
+        <p style="color: #999; text-align: center;">Nenhuma notificacao enviada ainda</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let notificationHistory = [];
+
+    // Verifica suporte e permissao ao carregar
+    function checkSupport() {
+      const statusEl = document.getElementById('permissionStatus');
+      const textEl = document.getElementById('permissionText');
+      const btnSend = document.getElementById('btnSend');
+
+      if (!('Notification' in window)) {
+        statusEl.className = 'permission-status denied';
+        statusEl.textContent = 'Nao Suportado';
+        textEl.textContent = 'Seu navegador nao suporta a Notifications API';
+        document.getElementById('btnRequest').disabled = true;
+        btnSend.disabled = true;
+        return;
+      }
+
+      updatePermissionUI();
+    }
+
+    // Atualiza UI baseado na permissao
+    function updatePermissionUI() {
+      const statusEl = document.getElementById('permissionStatus');
+      const textEl = document.getElementById('permissionText');
+      const btnSend = document.getElementById('btnSend');
+      const btnRequest = document.getElementById('btnRequest');
+
+      const permission = Notification.permission;
+
+      if (permission === 'default') {
+        statusEl.className = 'permission-status default';
+        statusEl.textContent = 'Nao Solicitado';
+        textEl.textContent = 'Clique em "Solicitar Permissao" para permitir';
+        btnSend.disabled = true;
+        btnRequest.disabled = false;
+      } else if (permission === 'granted') {
+        statusEl.className = 'permission-status granted';
+        statusEl.textContent = 'Permitido';
+        textEl.textContent = 'Voce pode enviar notificacoes!';
+        btnSend.disabled = false;
+        btnRequest.disabled = true;
+      } else if (permission === 'denied') {
+        statusEl.className = 'permission-status denied';
+        statusEl.textContent = 'Negado';
+        textEl.textContent = 'Permissao negada. Altere nas configuracoes do navegador';
+        btnSend.disabled = true;
+        btnRequest.disabled = true;
+      }
+    }
+
+    // Solicita permissao
+    function requestPermission() {
+      Notification.requestPermission().then((permission) => {
+        updatePermissionUI();
+        addToHistory('Permissao ' + permission, 'success');
+      }).catch((error) => {
+        console.error('Erro ao solicitar permissao:', error);
+        addToHistory('Erro: ' + error.message, 'error');
+      });
+    }
+
+    // Envia notificacao
+    function sendNotification() {
+      if (Notification.permission !== 'granted') {
+        alert('Permissao necessaria para enviar notificacoes!');
+        return;
+      }
+
+      const title = document.getElementById('notifTitle').value || 'Notificacao';
+      const body = document.getElementById('notifBody').value || '';
+      const icon = document.getElementById('notifIcon').value || '';
+      const badge = document.getElementById('notifBadge').value || '';
+      const tag = document.getElementById('notifTag').value || '';
+      const vibrate = document.getElementById('notifVibrate').checked;
+      const silent = document.getElementById('notifSilent').checked;
+
+      const options = {
+        body: body,
+        icon: icon,
+        badge: badge,
+        tag: tag,
+        requireInteraction: false,
+        silent: silent,
+        data: { 
+          timestamp: new Date().toISOString(),
+          title: title
+        }
+      };
+
+      if (vibrate) {
+        options.vibrate = [200, 100, 200];
+      }
+
+      try {
+        const notification = new Notification(title, options);
+
+        // Evento de clique
+        notification.onclick = (event) => {
+          event.preventDefault();
+          window.focus();
+          notification.close();
+          addToHistory('Clicou na notificacao: ' + title, 'success');
+        };
+
+        // Evento de fechamento
+        notification.onclose = () => {
+          addToHistory('Notificacao fechada: ' + title, 'success');
+        };
+
+        // Evento de erro
+        notification.onerror = (error) => {
+          console.error('Erro na notificacao:', error);
+          addToHistory('Erro na notificacao: ' + error.message, 'error');
+        };
+
+        addToHistory('Notificacao enviada: ' + title, 'success');
+      } catch (error) {
+        console.error('Erro ao criar notificacao:', error);
+        addToHistory('Erro: ' + error.message, 'error');
+      }
+    }
+
+    // Adiciona ao historico
+    function addToHistory(message, type) {
+      const timestamp = new Date();
+      notificationHistory.unshift({ message, type, timestamp });
+      
+      // Mantem apenas ultimas 10
+      if (notificationHistory.length > 10) {
+        notificationHistory.pop();
+      }
+
+      // Atualiza UI
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = notificationHistory.map((item, index) => `
+        <div class="history-item ${item.type}">
+          <strong>${item.type === 'success' ? '✓' : '✗'}</strong> ${item.message}
+          <div class="history-time">${item.timestamp.toLocaleString('pt-BR')}</div>
+        </div>
+      `).join('');
+    }
+
+    // Atualiza preview em tempo real
+    function updatePreview() {
+      const title = document.getElementById('notifTitle').value || '🔔 Nova Notificacao';
+      const body = document.getElementById('notifBody').value || 'Esta e uma notificacao de teste da Notification API!';
+
+      document.getElementById('previewTitle').textContent = title;
+      document.getElementById('previewBody').textContent = body;
+    }
+
+    // Adiciona listeners para atualizar preview
+    document.getElementById('notifTitle').addEventListener('input', updatePreview);
+    document.getElementById('notifBody').addEventListener('input', updatePreview);
+
+    // Inicializa
+    checkSupport();
+    updatePreview();
+  </script>
+</body>
+</html>
