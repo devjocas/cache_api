@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery API </title>
+</head>
+<body>
+    <h1>Status da bateria</h1>
+
+<p id="level">Carregamento: verificando...</p>
+<p id="charging">Estado: verificando...</p>
+
+<script>
+  async function mostrarBateria() {
+    const levelElement = document.querySelector("#level");
+    const chargingElement = document.querySelector("#charging");
+
+    if (!("getBattery" in navigator)) {
+      levelElement.textContent =
+        "A Battery Status API não está disponível.";
+      chargingElement.textContent = "";
+      return;
+    }
+
+    const battery = await navigator.getBattery();
+
+    function atualizarInterface() {
+      const percentual = Math.round(battery.level * 100);
+
+      levelElement.textContent = `Carregamento: ${percentual}%`;
+
+      chargingElement.textContent = battery.charging
+        ? "Estado: carregando"
+        : "Estado: não está carregando";
+    }
+
+    atualizarInterface();
+
+    battery.addEventListener("levelchange", atualizarInterface);
+    battery.addEventListener("chargingchange", atualizarInterface);
+  }
+
+  mostrarBateria();
+</script>
+</body>
+</html>
