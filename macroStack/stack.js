@@ -46,3 +46,26 @@ Promise.resolve()
   .catch(() => console.log('catch'))
   .finally(() => console.log('finally'))
   .then(() => console.log('then 2'));
+
+
+//   Exemplo completo: cadeia complexa com erro e fallback
+  fetchUser(id)
+  .then(user => {
+    if (!user) throw new Error('User not found');
+    return fetchPosts(user.id);
+  })
+  .then(posts => {
+    if (posts.length === 0) throw new Error('No posts');
+    return Promise.all(posts.map(fetchComments));
+  })
+  .catch(err => {
+    // tenta recuperar: usa posts vazios se falhar
+    console.warn('Recovered from error:', err.message);
+    return [];
+  })
+  .then(commentsArrays => {
+    const allComments = commentsArrays.flat();
+    return saveComments(allComments);
+  })
+  .then(() => console.log('Done'))
+  .catch(err => console.error('Fatal:', err));
