@@ -28,3 +28,7 @@ function soma() {
 // Com const
 console.log(cor); // ReferenceError
 const cor = "vermelho";
+
+//EVAL EXECUTION CONTEXT
+const codigo = "const x = 3; console.log(x);"
+eval(codigo)
